@@ -10,7 +10,7 @@ def manhattan(map_obj: Map) -> float | int:
         the order in which they are stored in the map object.
     """
     if map_obj.is_deadlock():
-        return float(0xffffff)
+        return float('inf')
     ## 2. Manhattan Distance Heuristic
     # Calculate the Manhattan distance from each box to its target position
     # and sum them up
@@ -25,7 +25,7 @@ def min_weight(map_obj: Map) -> float | int:
     Combines a simple deadlock check with min-weight matching using the Manhattan distance
     """
     if map_obj.is_deadlock():
-        return float(0xffffff)
+        return float('inf')
 
     box_positions = list(map_obj.positions_of_boxes.keys())
     target_positions = list(map_obj.targets)
@@ -46,5 +46,7 @@ def min_weight(map_obj: Map) -> float | int:
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
     # Sum up the total minimum distance between each box and its assigned target
     min_total_distance = cost_matrix[row_ind, col_ind].sum()
+
+    # TODO: add some heuristic to avoid moving boxes that restrict the movement of the player and other boxes
 
     return min_total_distance
