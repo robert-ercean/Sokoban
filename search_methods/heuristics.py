@@ -47,6 +47,7 @@ def min_weight(map_obj: Map) -> float | int:
     # Sum up the total minimum distance between each box and its assigned target
     min_total_distance = cost_matrix[row_ind, col_ind].sum()
 
-    # TODO: add some heuristic to avoid moving boxes that restrict the movement of the player and other boxes
+    # TODO: add some heuristic to add a signifcant penalty when
+    #       moving boxes that restrict the movement of the player and other boxes
 
     return min_total_distance

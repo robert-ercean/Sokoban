@@ -106,6 +106,29 @@ class Map:
             obstacles=data['walls'], 
             test_name=path.split('/')[-1].split('.')[0]
         )
+    def is_box(self, row, col):
+        ''' Checks if a given position is a box '''
+        if row < 0 or row >= self.length or col < 0 or col >= self.width:
+            return False
+
+        if self.map[row][col] == BOX_SYMBOL:
+            return True
+
+        return False
+
+    def is_wall(self, x, y):
+        ''' Checks if a given position is a wall or falls outside the map bounds '''
+        if x < 0 or x >= self.length or y < 0 or y >= self.width:
+            return True
+
+        if self.map[x][y] == OBSTACLE_SYMBOL:
+            return True
+        
+        # box on a target is considered a wall
+        if (x, y) in self.positions_of_boxes and (x, y) in self.targets:
+            return True
+        
+        return False
 
     def is_deadlock(self) -> bool:
         '''
@@ -113,10 +136,35 @@ class Map:
         A deadlock occurs when the player cannot move any boxes to their targets.
         This is a simplified version and may not cover all cases.
         '''
-        # Check if there are any boxes that cannot be moved
-        for box_name, box in self.boxes.items():
-            if not self.object_valid_move(box, UP) and not self.object_valid_move(box, DOWN) and not self.object_valid_move(box, LEFT) and not self.object_valid_move(box, RIGHT):
+        # Check if there are any boxes that can no longer be moved
+        for box_pos in self.positions_of_boxes.keys():
+            if box_pos in self.targets:
+                continue
+            x, y = box_pos
+            up = self.is_wall(x, y + 1)
+            down = self.is_wall(x, y - 1)
+            left = self.is_wall(x - 1, y)
+            right = self.is_wall(x + 1, y)
+            # Discard all possible corner combinations
+            squished_by_walls = (up and right) or (up and left) or (down and right) or (down and left)
+            if squished_by_walls:
                 return True
+            # return False -> if we add this beam search with simple manhattan no longer solves all maps on k=100
+            # Check if a box is stuck on a border and there is no target laying on that border
+            if x == 0 or x == self.length - 1:
+                target_on_border = False
+                for (target_x, target_y) in self.targets:
+                    if target_x == x:
+                        target_on_border = True
+                if not target_on_border:
+                    return False
+            if y == 0 or y == self.width - 1:
+                target_on_border = False
+                for (target_x, target_y) in self.targets:
+                    if target_y == y:
+                        target_on_border = True
+                if not target_on_border:
+                    return False
 
         return False
 
@@ -319,6 +367,8 @@ class Map:
         for move in self.filter_possible_moves():
             new_map = self.copy()
             new_map.apply_move(move)
+            if new_map.undo_moves > 0:
+                continue
             neighbours.append(new_map)
         return neighbours
 
