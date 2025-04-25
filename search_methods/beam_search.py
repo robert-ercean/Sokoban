@@ -14,29 +14,25 @@ class BeamSearch(Solver):
         Finds a solution using Beam Search. If goal is not reached,
         returns the path to the state with the best heuristic found.
         """
-        # Use self.initial_map from the Solver base class if it exists and is preferred
-        # Otherwise, use self.map if Solver doesn't store initial_map
-        initial_map_state = getattr(self, 'initial_map', self.map) # Safer access
+        initial_map_state = self.map
 
-        # Check if initial state is solvable
+        # Check if initial state is solvable according to the heuristic for debugging purposes
         initial_heuristic = self.heuristic(initial_map_state)
         if initial_heuristic == float('inf'):
             print("Initial state is deadlocked or unsolvable according to heuristic.")
             return None
         if initial_map_state.is_solved():
              print("Initial state is already solved.")
-             return [initial_map_state.copy()] # Ensure copy() method exists
+             return [initial_map_state.copy()]
 
         initial_hashable_state = self.get_hashable_state(initial_map_state)
 
         visited = {initial_hashable_state}
-        parents = {} # Stores child_hash -> parent_hash
+        parents = {} # Stores (k, v) : (child_hash, parent_hash)
         state_map = {initial_hashable_state: initial_map_state} # Stores hash -> Map object
 
-        # --- Track best state found ---
         best_heuristic_so_far = initial_heuristic
         best_state_hash_so_far = initial_hashable_state
-        # --- End track best state ---
 
         # Beam stores: (heuristic_value, current_map_object)
         beam = [(initial_heuristic, initial_map_state)]
