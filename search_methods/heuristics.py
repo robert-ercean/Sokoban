@@ -2,25 +2,11 @@ from scipy.optimize import linear_sum_assignment
 from sokoban.map import Map
 
 import numpy as np
+from collections import deque
 
-def manhattan(map_obj: Map) -> float | int:
-    """
-        Combines a simple deadlock check with a simple manhattan distance heuristic,
-        pairing each box with the corresponding target in pseudo-random order i.e.
-        the order in which they are stored in the map object.
-    """
-    if map_obj.is_deadlock():
-        return float('inf')
-    ## 2. Manhattan Distance Heuristic
-    # Calculate the Manhattan distance from each box to its target position
-    # and sum them up
-    total_distance = 0
-    for box_pos, target_pos in zip(map_obj.positions_of_boxes.keys(), map_obj.targets):
-        total_distance += abs(box_pos[0] - target_pos[0]) + abs(box_pos[1] - target_pos[1])
+DIRS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
-    return total_distance
-
-def min_weight(map_obj: Map) -> float | int:
+def min_weight_manhattan(map_obj: Map) -> float | int:
     """
     Combines a simple deadlock check with min-weight matching using the Manhattan distance
     """
@@ -49,5 +35,138 @@ def min_weight(map_obj: Map) -> float | int:
 
     # TODO: add some heuristic to add a signifcant penalty when
     #       moving boxes that restrict the movement of the player and other boxes
+
+    return min_total_distance
+
+def min_weight_manhattan_with_player(map_obj: Map) -> float | int:
+    """
+    Improved min_weight: considers both box-target distances and player-box distances.
+    """
+    if map_obj.is_deadlock():
+        return float('inf')
+
+    box_positions = list(map_obj.positions_of_boxes.keys())
+    target_positions = list(map_obj.targets)
+    player_position = (map_obj.player.x, map_obj.player.y)
+
+    # Create the cost matrix for boxes to targets
+    num_boxes = len(box_positions)
+    cost_matrix = np.full((num_boxes, num_boxes), float('inf'))
+
+    for i, b_pos in enumerate(box_positions):
+        for j, t_pos in enumerate(target_positions):
+            dist = abs(b_pos[0] - t_pos[0]) + abs(b_pos[1] - t_pos[1])
+            cost_matrix[i, j] = dist
+
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    min_total_distance = cost_matrix[row_ind, col_ind].sum()
+
+    # player-to-box proximity penalty
+    min_player_distance = min(
+        abs(player_position[0] - b[0]) + abs(player_position[1] - b[1])
+        for b in box_positions
+    )
+
+    # the number of total steps returned by the solution seems to be
+    # proportionate to the player-to-box prximity penalty
+    # up until a value of 1.5 which seems to be the sweet spot
+    return min_total_distance + 1.5 * min_player_distance
+
+
+def min_weight_bfs_with_player(map_obj: Map):
+    """
+    Faster heuristic: one BFS per box finds distances to all targets.
+    """
+
+    if map_obj.is_deadlock():
+        return float('inf')
+
+    box_positions = list(map_obj.positions_of_boxes.keys())
+    target_positions = list(map_obj.targets)
+
+    num_boxes = len(box_positions)
+    num_targets = len(target_positions)
+    cost_matrix = np.full((num_boxes, num_targets), float(0xffffff))
+
+    # Popoluate the cost matrix with the BFS dist from each box to all targets
+    for i, start in enumerate(box_positions):
+        visited = set()
+        queue = deque()
+        queue.append((start, 0))  # (pos, dist)
+
+        targets_found = set()
+
+        while queue and len(targets_found) < num_targets:
+            (x, y), dist = queue.popleft()
+
+            if (x, y) in target_positions:
+                j = target_positions.index((x, y))
+                cost_matrix[i, j] = dist
+                targets_found.add((x, y))
+                continue  # can still expand this node to find targets
+
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                nx, ny = x + dx, y + dy
+                if (0 <= nx < map_obj.length) and (0 <= ny < map_obj.width):
+                    if (nx, ny) not in visited and  not map_obj.is_wall(nx, ny):
+                        visited.add((nx, ny))
+                        queue.append(((nx, ny), dist + 1))
+
+
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    min_total_distance = cost_matrix[row_ind, col_ind].sum()
+
+    player_position = (map_obj.player.x, map_obj.player.y)
+
+    # player-to-box proximity penalty
+    min_player_distance = min(
+        abs(player_position[0] - b[0]) + abs(player_position[1] - b[1])
+        for b in box_positions
+    )
+
+    return min_total_distance + 0.5 * min_player_distance
+
+def min_weight_bfs(map_obj: Map):
+    """
+    Faster heuristic: one BFS per box finds distances to all targets.
+    """
+
+    if map_obj.is_deadlock():
+        return float('inf')
+
+    box_positions = list(map_obj.positions_of_boxes.keys())
+    target_positions = list(map_obj.targets)
+
+    num_boxes = len(box_positions)
+    num_targets = len(target_positions)
+    cost_matrix = np.full((num_boxes, num_targets), float(0xffffff))
+
+    # Popoluate the cost matrix with the BFS dist from each box to all targets
+    for i, start in enumerate(box_positions):
+        visited = set()
+        queue = deque()
+        queue.append((start, 0))  # (pos, dist)
+
+        targets_found = set()
+
+        while queue and len(targets_found) < num_targets:
+            (x, y), dist = queue.popleft()
+
+            if (x, y) in target_positions:
+                j = target_positions.index((x, y))
+                cost_matrix[i, j] = dist
+                targets_found.add((x, y))
+                continue  # can still expand this node to find targets
+
+            for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                nx, ny = x + dx, y + dy
+                if (0 <= nx < map_obj.length) and (0 <= ny < map_obj.width):
+                    if (nx, ny) not in visited and  not map_obj.is_wall(nx, ny):
+                        visited.add((nx, ny))
+                        queue.append(((nx, ny), dist + 1))
+
+
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    min_total_distance = cost_matrix[row_ind, col_ind].sum()
 
     return min_total_distance

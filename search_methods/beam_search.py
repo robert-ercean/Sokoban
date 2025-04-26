@@ -4,11 +4,13 @@ from . import heuristics
 
 class BeamSearch(Solver):
 
-    def __init__(self, map: Map, beam_width: int, heuristic: callable):
+    def __init__(self, map: Map, beam_width: int, heuristic: callable, allow_pulls=False):
         super().__init__(map)
         self.beam_width = beam_width
         self.heuristic = heuristic
         self.max_restarts = 10
+        self.allow_pulls = allow_pulls
+        self.explored_states = 0
 
     def solve(self):
         """
@@ -49,7 +51,7 @@ class BeamSearch(Solver):
             for _, current_map in beam:
                 current_hash = self.get_hashable_state(current_map)
 
-                neighbours = current_map.get_neighbours()
+                neighbours = current_map.get_neighbours(allow_pulls=self.allow_pulls)
 
                 for neigh in neighbours:
                     neigh_hash = self.get_hashable_state(neigh)
@@ -64,6 +66,7 @@ class BeamSearch(Solver):
                         if neigh.is_solved():
                             goal_hash = neigh_hash
                             print(f"Goal state found!\nExplored states: {len(visited)}")
+                            self.explored_states = len(visited)
                             beam = []
                             break
 

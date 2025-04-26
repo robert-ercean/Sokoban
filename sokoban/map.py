@@ -12,7 +12,6 @@ OBSTACLE_SYMBOL = 1
 BOX_SYMBOL = 2
 TARGET_SYMBOL = 3
 
-
 class Map:
     '''
     Map Class records the state of the board
@@ -130,11 +129,11 @@ class Map:
         
         return False
 
+
     def is_deadlock(self) -> bool:
         '''
         Check if the current state is a deadlock.
-        A deadlock occurs when the player cannot move any boxes to their targets.
-        This is a simplified version and may not cover all cases.
+        A deadlock occurs when the player cannot move a box to its target.
         '''
         # Check if there are any boxes that can no longer be moved
         for box_pos in self.positions_of_boxes.keys():
@@ -155,16 +154,28 @@ class Map:
                 target_on_border = False
                 for (target_x, target_y) in self.targets:
                     if target_x == x:
+                        # Check if there is already a box on this column
+                        for other_box_pos in self.positions_of_boxes.keys():
+                            if other_box_pos == box_pos:
+                                continue
+                            if other_box_pos[0] == x:
+                                return True
                         target_on_border = True
                 if not target_on_border:
-                    return False
+                    return True
             if y == 0 or y == self.width - 1:
                 target_on_border = False
                 for (target_x, target_y) in self.targets:
                     if target_y == y:
+                        # Check if there is already a box on this row
+                        for other_box_pos in self.positions_of_boxes.keys():
+                            if other_box_pos == box_pos:
+                                continue
+                            if other_box_pos[1] == y:
+                                return True
                         target_on_border = True
                 if not target_on_border:
-                    return False
+                    return True
 
         return False
 
@@ -361,13 +372,14 @@ class Map:
         new_map.undo_moves = self.undo_moves
         return new_map
 
-    def get_neighbours(self):
+    def get_neighbours(self, allow_pulls = True):
         ''' Returns the neighbours of the current state'''
         neighbours = []
+        moves = []
         for move in self.filter_possible_moves():
             new_map = self.copy()
             new_map.apply_move(move)
-            if new_map.undo_moves > 0:
+            if not allow_pulls and new_map.undo_moves > 0:
                 continue
             neighbours.append(new_map)
         return neighbours
