@@ -8,7 +8,7 @@ MOVE_COST = 1
 
 class LrtaStar(Solver):
 
-    def __init__(self,map: Map, heuristic: callable, max_steps = 100000, allow_pulls=False):
+    def __init__(self,map: Map, heuristic: callable, max_steps = 10000000, allow_pulls=False):
         super().__init__(map)
         self.heuristic = heuristic
         self.H_table = {}
@@ -77,5 +77,5 @@ class LrtaStar(Solver):
             self.solution_path.append(curr)
             steps += 1
 
-        print("LRTA* failed to reach a goal solution.")
+        print("LRTA* ran out of max_steps and failed to reach a goal solution.")
         return self.solution_path

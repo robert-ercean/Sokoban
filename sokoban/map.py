@@ -148,7 +148,7 @@ class Map:
             squished_by_walls = (up and right) or (up and left) or (down and right) or (down and left)
             if squished_by_walls:
                 return True
-            # return False -> if we add this beam search with simple manhattan no longer solves all maps on k=100
+
             # Check if a box is stuck on a border and there is no target laying on that border
             if x == 0 or x == self.length - 1:
                 target_on_border = False

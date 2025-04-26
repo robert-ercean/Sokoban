@@ -8,7 +8,6 @@ class BeamSearch(Solver):
         super().__init__(map)
         self.beam_width = beam_width
         self.heuristic = heuristic
-        self.max_restarts = 10
         self.allow_pulls = allow_pulls
         self.explored_states = 0
 
@@ -38,9 +37,7 @@ class BeamSearch(Solver):
         best_state_hash_so_far = initial_hashable_state
 
         goal_hash = None
-        last_visited = {}
-        last_parents = {}
-        restarts, i = 0, 0
+        i = 0
 
         # Beam stores: (heuristic_value, current_map_object)
         beam = [(initial_heuristic, initial_map_state)]
@@ -95,13 +92,6 @@ class BeamSearch(Solver):
                 visited.add(self.get_hashable_state(map_obj))
 
             i += 1
-            if not beam and restarts < self.max_restarts:
-                print("Beam Searched emptied. Restarting with the visited set corresponding to the best heuristic found.")
-                restarts += 1
-                # Restart the search with the best heuristic found so far
-                beam = [(best_heuristic_so_far, state_map[best_state_hash_so_far])]
-                visited = last_visited
-                parents = last_parents
 
         # Check if we have a partial solution or a goal solution
         reconstruction_start_hash = None
