@@ -154,7 +154,7 @@ def min_weight_bfs_with_player(map_obj: Map):
     num_targets = len(target_positions)
     cost_matrix = np.full((num_boxes, num_targets), float(0xffffff))
 
-    # Popoluate the cost matrix with the BFS dist from each box to all targets
+    # Populate the cost matrix with the BFS dist from each box to all targets
     for i, start in enumerate(box_positions):
         visited = set()
         queue = deque()
