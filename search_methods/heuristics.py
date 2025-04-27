@@ -7,7 +7,9 @@ from collections import deque
 DIRS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 def min_weight_euclidean(map_obj: Map) -> float | int:
-
+    """
+    Deadlock check + min-weight matching using the Euclidean distance
+    """
     if map_obj.is_deadlock():
         return float('inf')
 
@@ -31,7 +33,7 @@ def min_weight_euclidean(map_obj: Map) -> float | int:
 
 def min_weight_manhattan(map_obj: Map) -> float | int:
     """
-    Combines deadlock check with min-weight matching using the Manhattan distance
+    Combines a deadlock check with min-weight matching using the Manhattan distance
     """
     if map_obj.is_deadlock():
         return float('inf')
@@ -88,7 +90,7 @@ def min_weight_manhattan_with_player(map_obj: Map) -> float | int:
     )
 
     # the number of total steps returned by the solution seems to be
-    # proportionate to the player-to-box prximity penalty
+    # proportionate to the player-to-box proximity penalty
     # up until a value of 1.5 which seems to be the sweet spot
     return min_total_distance + 1.5 * min_player_distance
 

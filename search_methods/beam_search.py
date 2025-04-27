@@ -63,6 +63,8 @@ class BeamSearch(Solver):
                         if neigh.is_solved():
                             goal_hash = neigh_hash
                             print(f"Goal state found!\nExplored states: {len(visited)}")
+                            # Only update this field if we find a goal solution so the state plots will have a value of 0
+                            # if the algo failed to reach a goal
                             self.explored_states = len(visited)
                             beam = []
                             break

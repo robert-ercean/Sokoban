@@ -3,7 +3,7 @@
 ## Beam Search
 - I started by implementing the Beam Search algorithm because my first thought was that I should start
 to build my intuiton about the dynamic of the Sokoban game and implicitly the way i should design my
-heuristics around an offline search algorithm.
+heuristics around an offline search algorithm by using a beam width of 15.
 
 ### Euclidean Distance Heuristic
 - I started off by designing the simplest heuristic one could think of for a 2D game: the euclidean distance.
@@ -31,6 +31,7 @@ minimum cost perfect matching of this bipartite graph. This is a well known prob
 known as the assignment problem. I used the sci-py library that uses an O(N^3) algorithm which is pretty insignificant
 in computational terms for the sizes of the maps I was dealing with (a maximum of 5 boxes) therefore I didn't bother to
 optimize this further.
+- The final heuristic value is the sum of the weights of the edges in the minimum cost perfect matching of the bipartite graph.
 
 - I was pretty optimistic about this method of min-weight perfect matching so I introduced 0 tolerance for
 pull moves, disabling them completly from the search space.
@@ -103,5 +104,65 @@ a 0.7 decrease factor for the runtime and 0.5x decrease factor for the total pul
 - Another very intereseting thing worth noting is that the number of pull moves seems to be proportional to the size of the map and not the complexity of the map.
 
 - Next, the heuristic I was looking forward to testing the most: Distance with BFS:
-- 
+- Surprisngly, the results were not as expected. On average, if not equal on same maps, the number of steps and implicitly the runtime was
+higher than both the other distance heuristics. The only outlier seems to be large_map2 where BFS has a better performance, maybe because the map is the largest so it benefits more from distance that take into account the walls and other boxes.
+
+
+After comparing the performance of these three heuristics using LRTA* and Beam Search, I concluded that:
+    - The runtimes of the LRTA* approach using a given heuristic is evidently higer than the Beam Search approach using the same heuristic.
+    - I explained this by the intrinsic nature of LRTA*: it is an online search algorithm. While Beam Search is an offline one that has the
+    advantage of looking ahead in the search space and check multiple paths corresponding to multiple neighbouring states, LRTA* only looks at the current state and its neighbours.
+    - After analysing the way LRTA* moves the player around the map, I observed *plenty* of redundant moves, especially in the case of larger maps where the player just moves back and forth between two states, the adjacent states switch I talked about earlier.
+    I'm pretty sure this happens often because LRTA* gets stuck in a local minima and keeps "switching" until it can break free from it.
+    To try to speed up this process, I increased the "cost of the edge" in the graph search space to 4 from an initial value of 1.
+    After this modification, I've seen a good decrease in the number of steps taken in each map and also seen a reduced amount of redudant
+    switches between states. The graphs attached to this document showcase LRTA*'s behaviour with a move cost of 4.
+
+- After all this, I was still not satisfied with the behaviour of LRTA*, especially after observing a tendency of the algorithm to make
+the player just freely roam around the map without actually doing any work
+- One way I though about reducing this behaviour is to add a penalty for those moves that lead the player away from the closest box,
+thus introducing two new heuristics:
+    - min_weight_manhattan_dsitance + penalty for moves that lead away from the closest box = mw_mnht_with_player
+    - min_weight_bfs_distance + penalty for moves that lead away from the closest box = mw_bfs_with_player
+- The main difference between these two heuristics, beside the obvious fact that one uses BFS and the other Manhattan to calculate the cost matrix is how the distance away from the closest box is calculated:
+    - For the BFS heuristic, BFS is used to calculate
+    - For the Manhattan heuristic, the distance is calculated using the Manhattan distance formula.
+- The "player-to-box proximity" penalty of a certain state is proportional to the sum of the minimum_weight perfect matching of the boxes and the target positions, multiplied by a factor "alpha" which differs in each case.
+
+- After implementing these two heuristics of LRTA* and analysing their results, here are the main conclusions:
+
+For mw_manhattan with player-to-box proximity penalty:
+    - Surprsingly, the only expected result was in large_map2 where the number of steps taken was reduced, meanwhile for all
+    the other maps, even for large maps, the heuristic performed *worse* with a higher number of steps and runtime and even
+    introducing more pull moves. Quite shocking.
+
+For mw_bfs with player-to-box proximity penalty the results were more nearly to my expectations:
+    - For the majority of maps, the player-to-box proximity addition introduced performance benefits, averaging
+    a slight lower number of steps taken to its counter-part heuristic on the easier maps.
+    - Meanwhile, for medium, hard, super-hard, and large maps we can see a *very* neat performance increase, ranging
+    from 0.5x to even a 0.2x (hard_map1) runtime decrease multiplier and even *cutting out on the pull moves*.
+    - But, we still have the most counter-intuitive outlier as we've seen earlier during the Manhattan analysis, that is
+    *large_map2* the map that even triggered me to come up with these proximity penatly. Amazingly, it performed *much worse*
+    than its counter-part as well, seeing a *5x runtime multiplier* increase and even introducing a pull move that was absent before.
+
+Even though I came up with this player-to-box proximity penalty mainly for LRTA* due to its online nature, I though about running tests
+on the maps using this two new heuristics with the Beam Search algorithm. These were the results that I was most impressed with and I find them very interesting:
+
+- The number of states explored for the easy, medium hard and super-hard maps remained quite similar, with slight differences where the heuristic with no proxmity penalty perfomed a bit better.
+- But, for the larger maps we can see a very significant increase in performance. The proximity penalty heuristics peformed much better,
+where the Manhattan one has seen an average of 0.5x decrease multiplier in the number of states explored for both maps, meanwhile we see
+a 0.7x decrease multiplier for the BFS ones.
+
+Seeing this performance increase I was curious about how these heuristics will perform inside Beam Search if I lower the beam_width from an
+initial value of 15.
+
+Firstly, I reduced the beam_width to 10 and here's what I noticed:
+    - The Euclidean distance heuristic now also fails on medium_map2, having previously failed only on large_map2
+    - Now the BFS with and without proxmity pnealty heuristic fails on large_map2
+
+Further, we'll reduce the beam width to 5, surfacing a very interesting attribute of one of the heuristics:
+    - Now, all the heuristics fail on medium_map2 and large_map2 and even on super_hard_map1, with the only
+    heuristic that keeps on prevailing being: Min-Weight-Matching with Player-to-Box Proximity Penalty. Very interesting.
+    - Furthermore, now, with a 3x smaller beam width than initially this heuristic even performs better than before averaging a smaller
+    explored state space which was expected.
 

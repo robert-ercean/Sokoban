@@ -4,7 +4,7 @@ from . import heuristics
 
 # We'll assume a standard cost for each possible move
 # since pull moves are automatically filtered out in map.py
-MOVE_COST = 1
+MOVE_COST = 4
 
 class LrtaStar(Solver):
 
