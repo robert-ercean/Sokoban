@@ -98,10 +98,7 @@ When using Min-Weight with Euclidean distance, the results were as follows in co
 
 - Next, as we move higher in the heuristic quality hierarchy, we'll analyse the performance using the Manhattan distance heuristic:
 - As expected, the number of steps and implictly the runtime for the majority of maps was lower than the Euclidean distance, though the difference was not as significant as I expected, in contrast to the Beam Search where the difference was more pronounced.
-- The only outlier was *super_hard_map2* where the number of steps was much lower that the Euclidean counterpart i.e. a 0.5x decrease factor,
-a 0.7 decrease factor for the runtime and 0.5x decrease factor for the total pull moves used. This is probably because the map is so complex that it benefits from the diagonal moves assumptions that the Euclidean distance heuristic has in some way.
-
-- Another very intereseting thing worth noting is that the number of pull moves seems to be proportional to the size of the map and not the complexity of the map.
+- The only outlier was *super_hard_map2* where the number of steps was much lower that the Euclidean counterpart i.e. a 0.5x decrease factor for the steps taken, a 0.7 decrease factor for the runtime and 0.5x decrease factor for the total pull moves used. This is probably because the map is so complex that it benefits from the diagonal moves assumptions that the Euclidean distance heuristic has in some way.
 
 - Next, the heuristic I was looking forward to testing the most: Distance with BFS:
 - Surprisngly, the results were not as expected. On average, if not equal on same maps, the number of steps and implicitly the runtime was
